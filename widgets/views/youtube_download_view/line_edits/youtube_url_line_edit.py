@@ -3,5 +3,15 @@ from PySide6.QtWidgets import QLineEdit
 class YouTubeUrlLineEdit(QLineEdit):
 
     def __init__(self):
+
+        self.placeholder_text: str = "YouTube URL"
+        self.default_style_sheet: str = "color: white;"
+        self.error_style_sheet: str = "color: red;"
+
         super().__init__()
-        self.setPlaceholderText("YouTube URL")
+
+        self.reset()
+    
+    def reset(self):
+        self.setPlaceholderText(self.placeholder_text)
+        self.setStyleSheet(self.default_style_sheet)
