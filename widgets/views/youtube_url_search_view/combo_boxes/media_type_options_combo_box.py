@@ -4,9 +4,9 @@ from enums.stream_type import StreamType
 
 class MediaTypeOptionsComboBox(QComboBox):
 
-    def __init__(self):
+    def __init__(self, parent = None):
 
-        super().__init__()
+        super().__init__(parent = parent)
 
         self.addItem(StreamType.AUDIO_ONLY.value)
         self.addItem(StreamType.VIDEO_ONLY.value)

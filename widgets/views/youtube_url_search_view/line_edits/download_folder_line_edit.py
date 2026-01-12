@@ -1,14 +1,14 @@
 from PySide6.QtWidgets import QLineEdit
 
-class YouTubeUrlLineEdit(QLineEdit):
+class DownloadFolderLineEdit(QLineEdit):
 
-    def __init__(self):
+    def __init__(self, parent = None):
 
-        self.placeholder_text: str = "YouTube URL"
+        self.placeholder_text: str = "Download Folder URL"
         self.default_style_sheet: str = "color: white;"
         self.error_style_sheet: str = "color: red;"
 
-        super().__init__()
+        super().__init__(parent = parent)
 
         self.reset()
     
