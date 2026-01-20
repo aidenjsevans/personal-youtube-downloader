@@ -2,6 +2,8 @@ from widgets.main_window import MainWindow
 
 from PySide6.QtWidgets import QApplication
 
+from enums.image_format import ImageFormat
+
 from widgets.views.youtube_url_search_view.youtube_url_search_view import YouTubeUrlSearchView
 from widgets.views.youtube_url_search_view.labels.youtube_url_line_edit_label import YouTubeUrlLineEditLabel
 from widgets.views.youtube_url_search_view.line_edits.youtube_url_line_edit import YouTubeUrlLineEdit
@@ -62,6 +64,7 @@ if __name__ == "__main__":
         download_youtube_stream_push_button = DownloadYoutubeStreamPushButton(),
         stream_file_extension_options_combo_box_label = StreamFileExtensionOptionsComboBoxLabel(),
         stream_file_extension_options_combo_box = StreamFileExtensionOptionsComboBox(log_calls = True),
+        thumbnail_metadata_format = ImageFormat.JPEG,
         log_calls = True
         )
     

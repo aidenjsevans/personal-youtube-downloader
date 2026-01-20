@@ -8,6 +8,8 @@ from mixins.method_log_mixin import MethodLogMixin
 
 import requests
 
+from helpers.request_helper import RequestHelper
+
 class YoutubeThumbnailLabel(QLabel, MethodLogMixin):
 
     finished_set_thumbnail_signal = Signal()
@@ -21,6 +23,7 @@ class YoutubeThumbnailLabel(QLabel, MethodLogMixin):
         super().__init__(parent = parent)
 
         self.log_calls = log_calls
+        self.thumbnail_bytes: bytes | None = None
 
         self.youtube_thumbnail_pixmap = youtube_thumbnail_pixmap
 
@@ -30,9 +33,9 @@ class YoutubeThumbnailLabel(QLabel, MethodLogMixin):
     
     def set_thumbnail(self, thumbnail_url: str):
 
-        response = requests.get(thumbnail_url)
+        try:
 
-        if response.status_code == 200:
+            response = RequestHelper.get(thumbnail_url)
 
             pixmap = QPixmap()
             pixmap.loadFromData(response.content)
@@ -45,18 +48,19 @@ class YoutubeThumbnailLabel(QLabel, MethodLogMixin):
             
             self.setPixmap(scaled_pixmap)
             self.youtube_thumbnail_pixmap = scaled_pixmap
-        
-            if self.log_calls:
-                self.log_call(message = "Success")
 
             self.emit_finished_set_thumbnail_signal()
 
-            return
+            self.thumbnail_bytes = response.content
 
-        self.log_call(message = str(response.status_code))
+            if self.log_calls:
+                self.log_call(message = "Success")
 
-        self.emit_finished_set_thumbnail_signal()
-    
+        except requests.HTTPError as error:
+            
+            status_code: int = error.response.status_code
+            self.log_call(message = f"HTTPError: {status_code}")
+
     def emit_finished_set_thumbnail_signal(self):
 
         self.finished_set_thumbnail_signal.emit()

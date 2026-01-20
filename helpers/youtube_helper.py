@@ -1,10 +1,10 @@
-from pytubefix import YouTube, StreamQuery
+from pytubefix import StreamQuery
 
 from helpers.format_helper import FormatHelper
 
 from enums.stream_type import StreamType
 
-import re
+from mutagen.mp4 import MP4, MP4Cover
 
 class YouTubeHelper:
 
@@ -145,6 +145,27 @@ class YouTubeHelper:
             audio_file_extensions.append(file_extension)
         
         return audio_file_extensions
+
+    #   TODO handle exceptions
+    def set_mp4_audio_file_metadata(
+            audio_filepath: str,
+            title: str | None = None,
+            author: str | None = None,
+            thumbnail: list[MP4Cover] | None = None
+            ):
+        
+        audio_file = MP4(audio_filepath)
+
+        if title:
+            audio_file["\xa9nam"] = title
+        
+        if author:
+            audio_file["\xa9ART"] = author
+
+        if thumbnail:
+            audio_file["covr"] = thumbnail
+        
+        audio_file.save()
         
 
 

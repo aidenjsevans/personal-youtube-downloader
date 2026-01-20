@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QGridLayout,
     QLineEdit, QPushButton, QFileDialog,
-    QComboBox, QMainWindow)
+    QComboBox)
 
 from PySide6.QtCore import Qt
 
@@ -10,6 +10,12 @@ from pytubefix import YouTube, StreamQuery
 from mixins.method_log_mixin import MethodLogMixin
 
 from enums.stream_type import StreamType
+from enums.image_format import ImageFormat
+
+from helpers.format_helper import FormatHelper
+from helpers.youtube_helper import YouTubeHelper
+
+from mutagen.mp4 import MP4, MP4Cover
 
 class YoutubeDownloadView(QWidget, MethodLogMixin):
 
@@ -26,11 +32,13 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
             download_youtube_stream_push_button: QPushButton,
             stream_file_extension_options_combo_box_label: QLabel,
             stream_file_extension_options_combo_box: QComboBox,
+            thumbnail_metadata_format: ImageFormat,
             log_calls: bool = False,
             parent = None):
         
         super().__init__(parent = parent)
 
+        self.thumbnail_metadata_format = thumbnail_metadata_format
         self.log_calls = log_calls
         self.yt: YouTube | None = None
 
@@ -241,17 +249,41 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
             
         if filtered_streams.first():
             
-            filtered_streams.first().download(
+            stream_filepath: str = filtered_streams.first().download(
                 output_path = current_download_folder_url
                 )
             
-        
+            if current_stream_type == StreamType.AUDIO_AND_VIDEO or current_stream_type == StreamType.VIDEO_ONLY:
 
+                return
+            
+            elif current_stream_type == StreamType.AUDIO_ONLY and current_file_extension == "mp4":
 
+                mp4_cover: MP4Cover | None = None
 
+                if self.youtube_thumbnail_label.thumbnail_bytes:
 
+                    mp4_cover = FormatHelper.image_bytes_to_mp4_cover(
+                        self.youtube_thumbnail_label.thumbnail_bytes,
+                        self.thumbnail_metadata_format
+                        )
+                    
+                if mp4_cover:
+                    
+                    YouTubeHelper.set_mp4_audio_file_metadata(
+                        audio_filepath = stream_filepath,
+                        title = self.yt.title,
+                        author = self.yt.author,
+                        thumbnail = [mp4_cover]
+                        )
+                
+                else:
 
-
-
-        
-
+                    YouTubeHelper.set_mp4_audio_file_metadata(
+                        audio_filepath = stream_filepath,
+                        title = self.yt.title,
+                        author = self.yt.author,
+                        )
+                
+                    
+                    
