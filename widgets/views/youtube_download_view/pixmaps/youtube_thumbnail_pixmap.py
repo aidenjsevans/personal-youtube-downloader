@@ -4,6 +4,9 @@ class YoutubeThumbnailPixmap(QPixmap):
 
     def __init__(self):
 
-        super().__init__(400,225)
+        self.width_px: int = 400
+        self.height_px: int = 225
+
+        super().__init__(self.width_px, self.height_px)
 
         self.fill(QColor("lightgray"))

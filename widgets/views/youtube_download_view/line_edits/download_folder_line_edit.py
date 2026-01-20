@@ -1,0 +1,29 @@
+from PySide6.QtWidgets import QLineEdit
+
+from PySide6.QtGui import QIcon, QAction
+
+class DownloadFolderLineEdit(QLineEdit):
+
+    def __init__(self, parent = None):
+
+        super().__init__(parent = parent)
+
+        self.placeholder_text: str = "Download Folder URL"
+        self.default_style_sheet: str = "color: white;"
+        self.error_style_sheet: str = "color: red;"
+
+        clear_action: QAction = self.addAction(
+            QIcon("icons/backspace.svg"),
+            QLineEdit.TrailingPosition
+            )
+        
+        clear_action.triggered.connect(self.reset)
+
+        self.setReadOnly(True)
+        self.reset()
+    
+    def reset(self):
+        self.clear()
+        self.setPlaceholderText(self.placeholder_text)
+        self.setStyleSheet(self.default_style_sheet)
+    

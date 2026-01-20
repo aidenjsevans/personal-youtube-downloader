@@ -1,9 +1,7 @@
 from PySide6.QtWidgets import QPushButton, QWidget
 from PySide6.QtGui import QIcon
 
-from mixins.push_button_mixin import PushButtonMixin
-
-class SelectDownloadFolderPushButton(QPushButton, PushButtonMixin):
+class SelectDownloadFolderPushButton(QPushButton):
 
     def __init__(self, parent = None):
           
