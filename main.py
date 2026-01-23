@@ -4,6 +4,9 @@ from PySide6.QtWidgets import QApplication
 
 from enums.image_format import ImageFormat
 
+from widgets.style_sheets.light_theme import light_theme
+from widgets.style_sheets.dark_theme import dark_theme
+
 from widgets.views.youtube_url_search_view.youtube_url_search_view import YouTubeUrlSearchView
 from widgets.views.youtube_url_search_view.labels.youtube_url_line_edit_label import YouTubeUrlLineEditLabel
 from widgets.views.youtube_url_search_view.line_edits.youtube_url_line_edit import YouTubeUrlLineEdit
@@ -23,22 +26,18 @@ from widgets.views.youtube_download_view.buttons.download_youtube_stream_push_bu
 from widgets.views.youtube_download_view.labels.stream_file_extension_options_combo_box_label import StreamFileExtensionOptionsComboBoxLabel
 from widgets.views.youtube_download_view.combo_boxes.stream_file_extension_options_combo_box import StreamFileExtensionOptionsComboBox
 
+from widgets.tool_bars.main_tool_bar.main_tool_bar import MainToolBar
+from widgets.tool_bars.main_tool_bar.actions.return_to_previous_view_action import ReturnToPreviousViewAction
+
 if __name__ == "__main__":
 
     app = QApplication()
 
-    app.setStyleSheet("""
-        QPushButton {
-            padding: 5px 5px 5px 5px;
-        }
-        QLabel {
-            padding: 5px 5px 5px 5px;
-        }
-        QLineEdit {
-            padding: 5px 5px 5px 5px;
-        }             
-                                 
-    """)
+    app.setStyleSheet(dark_theme)
+
+    main_tool_bar = MainToolBar(
+        return_to_previous_view_action = ReturnToPreviousViewAction()
+        )
 
     youtube_url_search_view = YouTubeUrlSearchView(
         youtube_url_line_edit_label = YouTubeUrlLineEditLabel(),
@@ -68,11 +67,13 @@ if __name__ == "__main__":
         log_calls = True
         )
     
+
     window = MainWindow(
         x_position_px = 500,
         y_position_px = 500,
         width_px = 600,
         height_px = 200,
+        tool_bar = main_tool_bar,
         youtube_url_search_view = youtube_url_search_view,
         youtube_download_view = youtube_download_view,
         log_calls = True

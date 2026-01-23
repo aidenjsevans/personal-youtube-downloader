@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QPushButton, QFileDialog,
     QComboBox)
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 from pytubefix import YouTube, StreamQuery
 
@@ -18,6 +18,8 @@ from helpers.youtube_helper import YouTubeHelper
 from mutagen.mp4 import MP4, MP4Cover
 
 class YoutubeDownloadView(QWidget, MethodLogMixin):
+
+    finished_download_signal = Signal()
 
     def __init__(
             self,
@@ -284,6 +286,10 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
                         title = self.yt.title,
                         author = self.yt.author,
                         )
-                
+            
+            self.finished_download_signal.emit()
+            
+
+        
                     
                     

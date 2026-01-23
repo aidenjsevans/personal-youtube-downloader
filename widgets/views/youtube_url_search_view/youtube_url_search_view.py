@@ -109,6 +109,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
         if self.log_calls:
             self.log_call(message = "Success")
+    
 
             
             
