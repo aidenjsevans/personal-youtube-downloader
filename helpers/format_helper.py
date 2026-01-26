@@ -30,5 +30,15 @@ class FormatHelper:
         mp4_cover = MP4Cover(image_bytes, mp4_cover_format)
 
         return mp4_cover
+    
+    def playlist_url_to_valid_format(playlist_url: str):
+
+        re_match = re.search(r"watch\?(.*?)&", playlist_url)
+
+        invalid_substring: str = re_match.group(1)
+
+        valid_url: str = playlist_url.replace(f"watch?{invalid_substring}", "playlist?")
+        
+        return valid_url
 
         

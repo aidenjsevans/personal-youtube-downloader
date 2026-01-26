@@ -26,3 +26,8 @@ if __name__ == "__main__":
         streams = streams,
         abr = "160kbps"
         ))
+    
+    print(YouTubeHelper.get_stream_audio_resolution_options(
+        streams = streams,
+        file_extension = "mp4"
+    ))

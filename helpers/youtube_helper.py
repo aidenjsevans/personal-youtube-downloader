@@ -11,12 +11,25 @@ class YouTubeHelper:
     def get_stream_video_resolution_options(
             streams: StreamQuery,
             ascending_order: bool = True,
-            progressive: bool = True) -> list[str]:
+            progressive: bool = True,
+            file_extension: str | None = None) -> list[str]:
 
-        video_streams = streams.filter(
-            type = "video", 
-            progressive = progressive
-            )
+        video_streams: StreamQuery = None
+
+        if file_extension:
+
+            video_streams = streams.filter(
+                type = "video", 
+                progressive = progressive,
+                file_extension = file_extension
+                )
+        
+        else:
+
+            video_streams = streams.filter(
+                type = "video", 
+                progressive = progressive,
+                )
         
         resolutions_set = set()
 
@@ -38,9 +51,21 @@ class YouTubeHelper:
     
     def get_stream_audio_resolution_options(
             streams: StreamQuery,
-            ascending_order: bool = True) -> list[str]:
+            ascending_order: bool = True,
+            file_extension: str | None = None) -> list[str]:
         
-        audio_streams = streams.filter(type = "audio")
+        audio_streams: StreamQuery = None
+
+        if file_extension:
+            
+            audio_streams = streams.filter(
+                type = "audio",
+                file_extension = file_extension
+                )
+        
+        else:
+
+            audio_streams = streams.filter(type = "audio")
 
         resolutions_set = set()
 
@@ -92,16 +117,27 @@ class YouTubeHelper:
     
     def get_stream_video_file_extension_options(
             streams: StreamQuery,
-            resolution: str,
-            progressive: bool = True) -> list[str]:
+            progressive: bool = True,
+            resolution: str | None = None) -> list[str]:
         
         video_mime_types = set()
         
-        filtered_streams: StreamQuery = streams.filter(
-            type = "video",
-            resolution = resolution,
-            progressive = progressive
-            )
+        filtered_streams: StreamQuery = None
+
+        if resolution:
+
+            filtered_streams: StreamQuery = streams.filter(
+                type = "video",
+                resolution = resolution,
+                progressive = progressive
+                )
+        
+        else:
+
+            filtered_streams: StreamQuery = streams.filter(
+                type = "video",
+                progressive = progressive
+                )
         
         for stream in filtered_streams:
             
@@ -118,17 +154,27 @@ class YouTubeHelper:
             video_file_extensions.append(file_extension)
         
         return video_file_extensions
-
+    
     def get_stream_audio_file_extension_options(
             streams: StreamQuery,
-            abr: str) -> list[str]:
+            abr: str | None = None) -> list[str]:
         
         audio_mime_types = set()
+
+        filtered_streams: StreamQuery = None
+
+        if abr:
+            
+            filtered_streams: StreamQuery = streams.filter(
+                type = "audio",
+                abr = abr
+                )
         
-        filtered_streams: StreamQuery = streams.filter(
-            type = "audio",
-            abr = abr
-            )
+        else:
+
+            filtered_streams: StreamQuery = streams.filter(
+                type = "audio",
+                )
         
         for stream in filtered_streams:
             

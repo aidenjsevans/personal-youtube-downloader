@@ -9,6 +9,12 @@ QPushButton {
     background-color: #555555;
     color: #ffffff;
     border: 1px solid #666666;
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+QPushButton:hover {
+    background-color: #6c6c6c;
+    border: 1px solid #888888;
 }
 QLabel {
     color: #ffffff;
@@ -17,6 +23,8 @@ QLineEdit {
     background-color: #3c3f41;
     color: #ffffff;
     border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 10px;
 }
 QMenuBar {
     background-color: #3c3f41;
@@ -35,6 +43,8 @@ QComboBox {
     background-color: #3c3f41;
     color: #ffffff;
     border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 4px 10px;
 }
 QScrollBar:vertical {
     background-color: #2b2b2b;

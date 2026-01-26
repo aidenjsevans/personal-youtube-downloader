@@ -8,9 +8,12 @@ from widgets.style_sheets.light_theme import light_theme
 from widgets.style_sheets.dark_theme import dark_theme
 
 from widgets.views.youtube_url_search_view.youtube_url_search_view import YouTubeUrlSearchView
+from widgets.views.youtube_url_search_view.pixmaps.youtube_icon_pixmap import YouTubeIconPixmap
+from widgets.views.youtube_url_search_view.labels.youtube_icon_label import YouTubeIconLabel
 from widgets.views.youtube_url_search_view.labels.youtube_url_line_edit_label import YouTubeUrlLineEditLabel
 from widgets.views.youtube_url_search_view.line_edits.youtube_url_line_edit import YouTubeUrlLineEdit
 from widgets.views.youtube_url_search_view.buttons.search_youtube_media_push_button import SearchYoutubeMediaPushButton
+from widgets.views.youtube_url_search_view.check_boxes.playlist_url_check_box import PlaylistUrlCheckBox
 
 from widgets.views.youtube_download_view.youtube_download_view import YoutubeDownloadView
 from widgets.views.youtube_download_view.labels.youtube_thumbnail_label import YoutubeThumbnailLabel
@@ -26,6 +29,9 @@ from widgets.views.youtube_download_view.buttons.download_youtube_stream_push_bu
 from widgets.views.youtube_download_view.labels.stream_file_extension_options_combo_box_label import StreamFileExtensionOptionsComboBoxLabel
 from widgets.views.youtube_download_view.combo_boxes.stream_file_extension_options_combo_box import StreamFileExtensionOptionsComboBox
 
+from widgets.views.loading_view.loading_view import LoadingView
+from widgets.custom.circle_loading_widget import CircleLoadingWidget
+
 from widgets.tool_bars.main_tool_bar.main_tool_bar import MainToolBar
 from widgets.tool_bars.main_tool_bar.actions.return_to_previous_view_action import ReturnToPreviousViewAction
 
@@ -40,9 +46,15 @@ if __name__ == "__main__":
         )
 
     youtube_url_search_view = YouTubeUrlSearchView(
+
+        youtube_icon_label = YouTubeIconLabel(
+            youtube_icon_pixmap = YouTubeIconPixmap()
+            ),
+
         youtube_url_line_edit_label = YouTubeUrlLineEditLabel(),
         youtube_url_line_edit = YouTubeUrlLineEdit(),
         search_youtube_media_push_button = SearchYoutubeMediaPushButton(),
+        playlist_url_check_box = PlaylistUrlCheckBox(),
         log_calls = True
         )
     
@@ -67,7 +79,14 @@ if __name__ == "__main__":
         log_calls = True
         )
     
-
+    loading_view = LoadingView(
+        
+        circle_loading_widget = CircleLoadingWidget(
+            pen_width = 5,
+            radius = 50
+            )
+        )
+    
     window = MainWindow(
         x_position_px = 500,
         y_position_px = 500,
@@ -76,6 +95,7 @@ if __name__ == "__main__":
         tool_bar = main_tool_bar,
         youtube_url_search_view = youtube_url_search_view,
         youtube_download_view = youtube_download_view,
+        loading_view = loading_view,
         log_calls = True
         )
     
