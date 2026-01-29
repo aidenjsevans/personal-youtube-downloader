@@ -29,6 +29,8 @@ from widgets.views.youtube_download_view.buttons.download_youtube_stream_push_bu
 from widgets.views.youtube_download_view.labels.stream_file_extension_options_combo_box_label import StreamFileExtensionOptionsComboBoxLabel
 from widgets.views.youtube_download_view.combo_boxes.stream_file_extension_options_combo_box import StreamFileExtensionOptionsComboBox
 
+from widgets.views.youtube_playlist_download_view.youtube_playlist_download_view import YoutubePlaylistDownloadView
+
 from widgets.views.loading_view.loading_view import LoadingView
 from widgets.custom.circle_loading_widget import CircleLoadingWidget
 
@@ -62,19 +64,37 @@ if __name__ == "__main__":
         
         youtube_thumbnail_label = YoutubeThumbnailLabel(
             youtube_thumbnail_pixmap = YoutubeThumbnailPixmap(),
-            log_calls = True
             ),
         
         download_folder_line_edit_label = DownloadFolderLineEditLabel(),
         download_folder_line_edit = DownloadFolderLineEdit(),
         select_download_folder_push_button = SelectDownloadFolderPushButton(),
         stream_type_options_combo_box_label = StreamTypeOptionsComboBoxLabel(),
-        stream_type_options_combo_box = StreamTypeOptionsComboBox(log_calls = True),
+        stream_type_options_combo_box = StreamTypeOptionsComboBox(),
         stream_quality_options_combo_box_label = StreamQualityOptionsComboBoxLabel(),
         stream_quality_options_combo_box = StreamQualityOptionsComboBox(),
         download_youtube_stream_push_button = DownloadYoutubeStreamPushButton(),
         stream_file_extension_options_combo_box_label = StreamFileExtensionOptionsComboBoxLabel(),
-        stream_file_extension_options_combo_box = StreamFileExtensionOptionsComboBox(log_calls = True),
+        stream_file_extension_options_combo_box = StreamFileExtensionOptionsComboBox(),
+        thumbnail_metadata_format = ImageFormat.JPEG,
+        )
+    
+    youtube_playlist_download_view = YoutubePlaylistDownloadView(
+
+        youtube_thumbnail_label = YoutubeThumbnailLabel(
+            youtube_thumbnail_pixmap = YoutubeThumbnailPixmap(),
+            ),
+        
+        download_folder_line_edit_label = DownloadFolderLineEditLabel(),
+        download_folder_line_edit = DownloadFolderLineEdit(),
+        select_download_folder_push_button = SelectDownloadFolderPushButton(),
+        stream_type_options_combo_box_label = StreamTypeOptionsComboBoxLabel(),
+        stream_type_options_combo_box = StreamTypeOptionsComboBox(),
+        stream_quality_options_combo_box_label = StreamQualityOptionsComboBoxLabel(),
+        stream_quality_options_combo_box = StreamQualityOptionsComboBox(),
+        download_youtube_stream_push_button = DownloadYoutubeStreamPushButton(),
+        stream_file_extension_options_combo_box_label = StreamFileExtensionOptionsComboBoxLabel(),
+        stream_file_extension_options_combo_box = StreamFileExtensionOptionsComboBox(),
         thumbnail_metadata_format = ImageFormat.JPEG,
         log_calls = True
         )
@@ -90,13 +110,13 @@ if __name__ == "__main__":
     window = MainWindow(
         x_position_px = 500,
         y_position_px = 500,
-        width_px = 600,
-        height_px = 200,
+        width_px = 800,
+        height_px = 400,
         tool_bar = main_tool_bar,
         youtube_url_search_view = youtube_url_search_view,
         youtube_download_view = youtube_download_view,
+        youtube_playlist_download_view = youtube_playlist_download_view,
         loading_view = loading_view,
-        log_calls = True
         )
     
     window.show()

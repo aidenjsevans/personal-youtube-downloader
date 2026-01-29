@@ -4,30 +4,41 @@ from helpers.youtube_helper import YouTubeHelper
 from helpers.format_helper import FormatHelper
 from helpers.playlist_helper import PlaylistHelper
 
+from PySide6.QtWidgets import QApplication, QMainWindow
+
+from PySide6.QtCore import Qt
+
+from widgets.views.youtube_download_view.combo_boxes.stream_type_options_combo_box import StreamTypeOptionsComboBox
+from widgets.views.youtube_download_view.combo_boxes.stream_file_extension_options_combo_box import StreamFileExtensionOptionsComboBox
+from widgets.views.youtube_download_view.combo_boxes.stream_quality_options_combo_box import StreamQualityOptionsComboBox
+
+import sys
+
 import re
 
 if __name__ == "__main__":
     
-    invalid_playlist_url = "https://www.youtube.com/watch?v=ApScvH2sgyE&list=PLr4HdpPJJEH0EZHLQVnfeDDWrnGVrFTgI"
+    app = QApplication(sys.argv)
 
-    valid_playlist_url = FormatHelper.playlist_url_to_valid_format(invalid_playlist_url)
+    pl = Playlist(
+        "https://www.youtube.com/watch?v=ApScvH2sgyE&list=PLr4HdpPJJEH0EZHLQVnfeDDWrnGVrFTgI&pp=gAQBsAgC"
+        )
 
-    print(valid_playlist_url)
+    stream_type_combo_box = StreamTypeOptionsComboBox()
+    stream_type_combo_box.set_combo_box_items_based_on_playlist(pl)
 
-    pl = Playlist("https://www.youtube.com/watch?v=ApScvH2sgyE&list=PLr4HdpPJJEH0EZHLQVnfeDDWrnGVrFTgI&pp=gAQBsAgC")
+    stream_file_extension_combo_box = StreamFileExtensionOptionsComboBox()
+    stream_file_extension_combo_box.set_combo_box_items_based_on_playlist(pl, stream_type_combo_box.currentData(Qt.UserRole))
 
-    print(PlaylistHelper.get_common_stream_audio_resolution_options(
-        playlist = pl,
-        file_extension = "mp4"
-        ))
+    stream_quality_combo_box = StreamQualityOptionsComboBox()
+    stream_quality_combo_box.set_combo_box_items_based_on_playlist(pl, stream_type_combo_box.currentData(Qt.UserRole), stream_file_extension_combo_box.currentText())
+
+    stream_quality_combo_box.show()
+
+    sys.exit(app.exec())
     
-    print(PlaylistHelper.get_common_stream_type_options(
-        playlist = pl
-        ))
     
-    print(PlaylistHelper.get_commmon_stream_audio_file_extension_options(
-        playlist = pl
-    ))
+    
 
 
     

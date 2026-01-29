@@ -7,7 +7,7 @@ from PySide6.QtCore import (
 
 from mixins.method_log_mixin import MethodLogMixin
 
-from pytubefix import YouTube
+from pytubefix import YouTube, Playlist
 from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
 from widgets.custom.circle_loading_widget import CircleLoadingWidget
@@ -17,6 +17,7 @@ import time
 class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
     valid_youtube_url_signal = Signal(YouTube)
+    valid_youtube_playlist_url_signal = Signal(Playlist)
     started_searching_signal = Signal()
     failed_search_signal = Signal()
 
@@ -90,7 +91,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
         try:
 
-            self.start_searching()
+            #self.start_searching()
 
             self.youtube_url = self.youtube_url_line_edit.text()
 
@@ -100,26 +101,40 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
             if self.youtube_url_line_edit_error_text:
                 return
             
-            yt = YouTube(url = self.youtube_url)
-            yt.check_availability()
+            #   TODO user option to skip exception
+            if self.playlist_url_check_box.isChecked():
+                
+                playlist = Playlist(url = self.youtube_url)
 
-            self.emit_valid_youtube_url_signal(yt)
+                for youtube in playlist.videos:
+                    
+                    youtube.check_availability()
+                
+                self.emit_valid_youtube_playlist_url_signal(playlist)
+                
+            else:
+
+                youtube = YouTube(url = self.youtube_url)
+                
+                youtube.check_availability()
+
+                self.emit_valid_youtube_url_signal(youtube)
 
         except RegexMatchError:
 
             self.youtube_url_line_edit_error_text = "ERROR: Invalid YouTube URL"
-            self.fail_searching()
+            #self.fail_searching()
 
         except VideoUnavailable:
             
             self.youtube_url_line_edit_error_text = "ERROR: Video unavailable"
-            self.fail_searching()
+            #self.fail_searching()
 
         finally:
             
             if self.youtube_url_line_edit_error_text:
 
-                self.fail_searching()
+                #self.fail_searching()
                 self.youtube_url_line_edit.clear()
                 self.youtube_url_line_edit.setPlaceholderText(self.youtube_url_line_edit_error_text)
                 self.youtube_url_line_edit.setStyleSheet(self.youtube_url_line_edit.error_style_sheet)
@@ -128,9 +143,16 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
                 if self.log_calls:
                     self.log_call(message = self.youtube_url_line_edit_error_text)
             
-    def emit_valid_youtube_url_signal(self, yt: YouTube):
+    def emit_valid_youtube_url_signal(self, youtube: YouTube):
         
-        self.valid_youtube_url_signal.emit(yt)
+        self.valid_youtube_url_signal.emit(youtube)
+
+        if self.log_calls:
+            self.log_call(message = "Success")
+    
+    def emit_valid_youtube_playlist_url_signal(self, playlist: Playlist):
+
+        self.valid_youtube_playlist_url_signal.emit(playlist)
 
         if self.log_calls:
             self.log_call(message = "Success")

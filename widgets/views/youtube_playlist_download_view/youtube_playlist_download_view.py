@@ -16,11 +16,11 @@ from enums.youtube_download_view_layout import YoutubeDownloadViewLayout
 from helpers.format_helper import FormatHelper
 from helpers.youtube_helper import YouTubeHelper
 
-from mutagen.mp4 import MP4Cover
+from mutagen.mp4 import MP4, MP4Cover
 
-class YoutubeDownloadView(QWidget, MethodLogMixin):
+class YoutubePlaylistDownloadView(QWidget, MethodLogMixin):
 
-    finished_youtube_download_signal = Signal()
+    finished_youtube_playlist_download_signal = Signal()
 
     def __init__(
             self,
@@ -43,7 +43,7 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
 
         self.thumbnail_metadata_format = thumbnail_metadata_format
         self.log_calls = log_calls
-        self.youtube: YouTube | None = None
+        self.playlist: Playlist | None = None
 
         #-----YouTube thumbnail label-----
         self.youtube_thumbnail_label = youtube_thumbnail_label
@@ -52,7 +52,7 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
 
         #-----Download folder line edit label-----
         self.download_folder_line_edit_label = download_folder_line_edit_label
-       # self.download_folder_line_edit_label.setParent(self)
+        #self.download_folder_line_edit_label.setParent(self)
         #-----------------------------------------
         
         #------Download folder line edit-----
@@ -114,10 +114,11 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
         layout.addWidget(self.select_download_folder_push_button, 1, 2)
         layout.addWidget(self.stream_type_options_combo_box_label, 2, 0)
         layout.addWidget(self.stream_type_options_combo_box, 2, 1)
-        layout.addWidget(self.stream_quality_options_combo_box_label, 3, 0)
-        layout.addWidget(self.stream_quality_options_combo_box, 3, 1)
-        layout.addWidget(self.stream_file_extension_options_combo_box_label, 4, 0)
-        layout.addWidget(self.stream_file_extension_options_combo_box, 4, 1)       
+        layout.addWidget(self.stream_file_extension_options_combo_box_label, 3, 0)
+        layout.addWidget(self.stream_file_extension_options_combo_box, 3, 1) 
+        layout.addWidget(self.stream_quality_options_combo_box_label, 4, 0)
+        layout.addWidget(self.stream_quality_options_combo_box, 4, 1)
+      
         layout.addWidget(self.download_youtube_stream_push_button, 5, 1)
 
         self.setLayout(layout)
@@ -151,36 +152,57 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
                 self.download_folder_line_edit.setPlaceholderText(self.download_folder_line_edit_error_text)
                 self.download_folder_line_edit.setStyleSheet(self.download_folder_line_edit.error_style_sheet)
     
-    def connect_handle_valid_youtube_url_signal_methods(self, youtube_url_search_view: QWidget):
-        youtube_url_search_view.valid_youtube_url_signal.connect(self.handle_valid_youtube_url_signal)
+    def connect_handle_valid_youtube_playlist_url_signal_methods(self, youtube_url_search_view: QWidget):
+        youtube_url_search_view.valid_youtube_playlist_url_signal.connect(self.handle_valid_youtube_playlist_url_signal)
     
-    def handle_valid_youtube_url_signal(self, youtube: YouTube):
-        
-        self.youtube = youtube
-        youtube_thumbnail_url: str = youtube.thumbnail_url
+    #   TODO validation of empty playlist
+    def handle_valid_youtube_playlist_url_signal(self, playlist: Playlist):
+    
+        self.playlist = playlist
 
+        first_youtube: YouTube = playlist.videos[0]
+
+        print(f"first_youtube: {first_youtube}")
+
+        youtube_thumbnail_url: str = first_youtube.thumbnail_url
+
+        print(f"youtube_thumbnail_url: {youtube_thumbnail_url}")
+        
         self.youtube_thumbnail_label.set_thumbnail(youtube_thumbnail_url)
 
-        self.stream_type_options_combo_box.set_combo_box_items_based_on_streams(self.youtube.streams)
-        
+        self.stream_type_options_combo_box.set_combo_box_items_based_on_playlist(self.playlist)
+
+        stream_type_options_combo_box_items = [self.stream_type_options_combo_box.itemText(i) for i in range(self.stream_type_options_combo_box.count())]
+        print(f"stream_type_options_combo_box_items: {stream_type_options_combo_box_items}")
+
         current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)
 
-        self.stream_quality_options_combo_box.set_combo_box_items_based_on_streams(
-            streams = self.youtube.streams,
+        print(f"current_stream_type: {current_stream_type}")
+
+        self.stream_file_extension_options_combo_box.set_combo_box_items_based_on_playlist(
+            playlist = self.playlist,
             stream_type = current_stream_type
             )
         
-        current_stream_quality: str = self.stream_quality_options_combo_box.currentText()
+        stream_file_extension_options_combo_box_items = [self.stream_file_extension_options_combo_box.itemText(i) for i in range(self.stream_file_extension_options_combo_box.count())]
+        print(f"stream_file_extension_options_combo_box_items: {stream_file_extension_options_combo_box_items}")
+        
+        current_stream_file_extension: str = self.stream_file_extension_options_combo_box.currentText()
 
-        self.stream_file_extension_options_combo_box.set_combo_box_items_based_on_streams(
-            streams = self.youtube.streams,
+        print(f"current_stream_file_extension: {current_stream_file_extension}")
+
+        self.stream_quality_options_combo_box.set_combo_box_items_based_on_playlist(
+            playlist = self.playlist,
             stream_type = current_stream_type,
-            stream_quality = current_stream_quality
+            file_extension = current_stream_file_extension
             )
+        
+        stream_quality_options_combo_box_items = [self.stream_quality_options_combo_box.itemText(i) for i in range(self.stream_quality_options_combo_box.count())]
+        print(f"stream_quality_options_combo_box_items: {stream_quality_options_combo_box_items}")
 
         if self.log_calls:
             self.log_call(message = "Success")
-    
+
     def on_activate_stream_type_options_combo_box(self):
         
         current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)
@@ -210,6 +232,16 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
             stream_quality = current_stream_quality
             )
     
+    def on_activate_stream_file_extension_options_combo_box(self):
+
+        current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)
+
+        current_stream_file_extension = self.stream_file_extension_options_combo_box.currentText()
+
+        self.stream_quality_options_combo_box.set_combo_box_items_based_on_streams(
+            streams = self.youtube.streams,
+        )
+
     def on_click_download_youtube_stream_push_button(self):
 
         current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)
@@ -288,8 +320,11 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
                         author = self.youtube.author,
                         )
             
-            self.finished_youtube_download_signal.emit()
+            self.finished_youtube_playlist_download_signal.emit()
 
+
+
+            
 
         
                     

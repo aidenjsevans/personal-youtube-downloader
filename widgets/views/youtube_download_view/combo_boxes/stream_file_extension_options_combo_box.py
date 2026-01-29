@@ -1,10 +1,9 @@
 from PySide6.QtWidgets import QComboBox
 
-from PySide6.QtCore import Qt, Signal
-
-from pytubefix import StreamQuery
+from pytubefix import StreamQuery, Playlist
 
 from helpers.youtube_helper import YouTubeHelper
+from helpers.playlist_helper import PlaylistHelper
 
 from enums.stream_type import StreamType
 
@@ -21,11 +20,11 @@ class StreamFileExtensionOptionsComboBox(QComboBox, MethodLogMixin):
 
         self.log_calls = log_calls
 
-    def set_combo_box_items(
+    def set_combo_box_items_based_on_streams(
             self, 
             streams: StreamQuery,
             stream_type: StreamType,
-            stream_quality: str):
+            stream_quality: str | None = None):
 
         self.clear()
 
@@ -60,4 +59,42 @@ class StreamFileExtensionOptionsComboBox(QComboBox, MethodLogMixin):
         if self.log_calls:
             self.log_call(message = f"{stream_file_extension_options}")
     
+    def set_combo_box_items_based_on_playlist(
+            self, 
+            playlist: Playlist,
+            stream_type: StreamType,
+            stream_quality: str | None = None):
+
+        self.clear()
+
+        common_stream_file_extension_options: list[str] = []
+
+        if stream_type == StreamType.AUDIO_AND_VIDEO:
+
+            common_stream_file_extension_options = PlaylistHelper.get_commmon_stream_video_file_extension_options(
+                playlist = playlist,
+                progressive = True,
+                resolution = stream_quality
+                )
+
+        elif stream_type == StreamType.VIDEO_ONLY:
+
+            common_stream_file_extension_options = PlaylistHelper.get_commmon_stream_video_file_extension_options(
+                playlist = playlist,
+                progressive = False,
+                resolution = stream_quality
+                )
+        
+        elif stream_type == StreamType.AUDIO_ONLY:
+
+            common_stream_file_extension_options = PlaylistHelper.get_commmon_stream_audio_file_extension_options(
+                playlist = playlist,
+                abr = stream_quality
+                )
+        
+        for common_file_extension in common_stream_file_extension_options:
+            self.addItem(common_file_extension)
+        
+        if self.log_calls:
+            self.log_call(message = f"{common_stream_file_extension_options}")
         
