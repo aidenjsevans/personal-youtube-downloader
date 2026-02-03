@@ -4,7 +4,7 @@ from datetime import datetime
 
 class MethodLogMixin:
 
-    def log_call(obj, message: str = None):
+    def log_call(obj, message: str = "Done"):
         
         frame = inspect.currentframe().f_back
         class_name: str = obj.__class__.__name__

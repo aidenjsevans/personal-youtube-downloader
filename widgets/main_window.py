@@ -2,8 +2,6 @@ from PySide6.QtWidgets import (
     QMainWindow, QStackedWidget, QWidget,
     QGridLayout, QToolBar)
 
-from PySide6.QtGui import QAction
-
 from mixins.method_log_mixin import MethodLogMixin
 
 class MainWindow(QMainWindow, MethodLogMixin):
@@ -32,47 +30,36 @@ class MainWindow(QMainWindow, MethodLogMixin):
             
         self.setWindowTitle("YouTubeDownloader")
 
-        #-----Tool Bar-----
+        #=====Tool Bar=====
         self.tool_bar = tool_bar
         self.addToolBar(tool_bar)
         self.tool_bar.setParent(self)
         self.tool_bar.actions()[0].return_to_previous_view_action_signal.connect(self.change_to_previous_view_and_remove_from_route_stack)
         self.tool_bar.actions()[0].setEnabled(False)
-        #------------------
+        #==================
 
-        #-----YouTube URL search view-----
+        #=====YouTube URL search view=====
         self.youtube_url_search_view = youtube_url_search_view
         self.youtube_url_search_view.setParent(self)
-        self.youtube_url_search_view.started_searching_signal.connect(self.handle_started_searching_signal)
-        self.youtube_url_search_view.failed_search_signal.connect(self.handle_failed_search_signal)
-        #---------------------------------
+        #=================================
 
-        #-----YouTube download view-----
+        #=====YouTube download view=====
         self.youtube_download_view = youtube_download_view
         self.youtube_download_view.setParent(self)
-        self.youtube_download_view.finished_youtube_download_signal.connect(self.handle_finished_download_signal)
-        #-------------------------------
+        self.youtube_download_view.initialised_youtube_stream_thumbnail_signal.connect(self.on_initialised_youtube_stream_thumbnail_signal)
+        self.youtube_url_search_view.valid_youtube_stream_signal.connect(self.youtube_download_view.on_valid_youtube_stream_signal)
+        #===============================
 
-        #-----YouTube playlist download view-----
+        #=====YouTube playlist download view=====
         self.youtube_playlist_download_view = youtube_playlist_download_view
         self.youtube_playlist_download_view.setParent(self)
-        self.youtube_playlist_download_view.finished_youtube_playlist_download_signal.connect(self.handle_finished_download_signal)
-        #----------------------------------------
+        #========================================
 
-        #   The YouTube download view needs to be aware of the YouTube URL search view to listen for the valid YouTube URL signal
-        self.youtube_download_view.connect_handle_valid_youtube_url_signal_methods(self.youtube_url_search_view)
-        self.youtube_playlist_download_view.connect_handle_valid_youtube_playlist_url_signal_methods(self.youtube_url_search_view)
-
-        #   Need to change the main window view when a valid YouTube URL is emitted and the set thumbnail method has completed
-        self.youtube_download_view.youtube_thumbnail_label.finished_set_thumbnail_signal.connect(self.handle_finished_set_youtube_thumbnail_signal)
-        self.youtube_playlist_download_view.youtube_thumbnail_label.finished_set_thumbnail_signal.connect(self.handle_finished_set_youtube_playlist_thumbnail_signal)
-        #-------------------------------
-
-        #-----Loading view-----
+        #=====Loading view=====
         self.loading_view = loading_view
-        #----------------------
+        #======================
 
-        #-----View stack-----
+        #=====View stack=====
         self.view_stack = QStackedWidget()
 
         self.view_stack.addWidget(self.youtube_url_search_view)
@@ -81,13 +68,13 @@ class MainWindow(QMainWindow, MethodLogMixin):
         self.view_stack.addWidget(self.loading_view)
 
         self.view_stack.setCurrentWidget(self.youtube_url_search_view)
-        #--------------------
+        #====================
 
-        #-----Route Stack-----
+        #=====Route Stack=====
         self.route_stack = []
-        #---------------------
+        #=====================
 
-        #-----Layout-----
+        #=====Layout=====
         container = QWidget()
         layout = QGridLayout()
 
@@ -95,60 +82,60 @@ class MainWindow(QMainWindow, MethodLogMixin):
 
         container.setLayout(layout)
         self.setCentralWidget(container)
-        #----------------
+        #================
     
-    def handle_finished_set_youtube_thumbnail_signal(self):
+    def on_initialised_youtube_stream_thumbnail_signal(self):
 
         self.change_view_and_add_current_view_to_route_stack(self.youtube_download_view)
 
-        print("handle_finished_set_youtube_thumbnail_signal")
-
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
         
-    def handle_finished_set_youtube_playlist_thumbnail_signal(self):
+    def on_finished_set_youtube_playlist_thumbnail_signal(self):
 
         self.change_view_and_add_current_view_to_route_stack(self.youtube_playlist_download_view)
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
     
-    def handle_finished_download_signal(self):
+    def on_finished_download_signal(self):
 
         self.view_stack.setCurrentWidget(self.youtube_url_search_view)
         self.clear_route_stack()
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
         
-    def handle_started_searching_signal(self):
+    def on_started_searching_signal(self):
         
         self.change_view_and_add_current_view_to_route_stack(self.loading_view)
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
 
-    def handle_failed_search_signal(self):
+    def on_failed_search_signal(self):
         
         self.change_to_previous_view_and_remove_from_route_stack()
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
     
-    def change_view_and_add_current_view_to_route_stack(
-            self, 
-            view: QWidget):
+    def change_view_and_add_current_view_to_route_stack(self, view: QWidget):
 
         self.route_stack.append(self.view_stack.currentWidget())
         self.tool_bar.actions()[0].setEnabled(True)
 
         self.view_stack.setCurrentWidget(view)
+
+        if self.log_calls:
+            self.log_call()
     
-    def change_view_and_do_not_add_current_view_to_route_stack(
-            self,
-            view: QWidget):
+    def change_view_and_do_not_add_current_view_to_route_stack(self, view: QWidget):
         
         self.view_stack.setCurrentWidget(view)
+
+        if self.log_calls:
+            self.log_call()
     
     def change_to_previous_view_and_remove_from_route_stack(self):
 
@@ -161,11 +148,17 @@ class MainWindow(QMainWindow, MethodLogMixin):
 
         if len(self.route_stack) == 0:
             self.tool_bar.actions()[0].setEnabled(False)
+        
+        if self.log_calls:
+            self.log_call()
     
     def clear_route_stack(self):
 
         self.route_stack.clear()
         self.tool_bar.actions()[0].setEnabled(False)
+
+        if self.log_calls:
+            self.log_call()
 
     def pop_current_route_from_route_stack(self):
 
@@ -173,8 +166,7 @@ class MainWindow(QMainWindow, MethodLogMixin):
             return
         else:
             self.route_stack.pop()
-
-    def handle_return_to_previous_view_action_signal(self):
-        self.change_to_previous_view_and_remove_from_route_stack()
-
+        
+        if self.log_calls:
+            self.log_call()
     

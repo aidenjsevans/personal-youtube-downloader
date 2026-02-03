@@ -36,7 +36,7 @@ class StreamTypeOptionsComboBox(QComboBox, MethodLogMixin):
                 )
         
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
         
     def set_combo_box_items_based_on_playlist(
             self, 
@@ -54,7 +54,7 @@ class StreamTypeOptionsComboBox(QComboBox, MethodLogMixin):
                 )
         
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
         
 
 

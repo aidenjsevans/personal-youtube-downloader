@@ -1,26 +1,32 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QGridLayout,
-    QLineEdit, QPushButton, QFileDialog,
-    QComboBox)
+    QLineEdit, QPushButton, QComboBox)
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QThread
 
-from pytubefix import YouTube, StreamQuery, Playlist
+from PySide6.QtGui import QPixmap
+
+from pytubefix import YouTube, StreamQuery
 
 from mixins.method_log_mixin import MethodLogMixin
 
 from enums.stream_type import StreamType
 from enums.image_format import ImageFormat
-from enums.youtube_download_view_layout import YoutubeDownloadViewLayout
 
 from helpers.format_helper import FormatHelper
 from helpers.youtube_helper import YouTubeHelper
 
 from mutagen.mp4 import MP4Cover
 
+from widgets.views.youtube_download_view.youtube_download_view_worker import YouTubeDownloadViewWorker
+
 class YoutubeDownloadView(QWidget, MethodLogMixin):
 
     finished_youtube_download_signal = Signal()
+
+    initialised_youtube_stream_combo_boxes_signal = Signal()
+
+    initialised_youtube_stream_thumbnail_signal = Signal()
 
     def __init__(
             self,
@@ -45,67 +51,67 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
         self.log_calls = log_calls
         self.youtube: YouTube | None = None
 
-        #-----YouTube thumbnail label-----
+        #=====YouTube thumbnail label=====
         self.youtube_thumbnail_label = youtube_thumbnail_label
-        #self.youtube_thumbnail_label.setParent(self)
-        #---------------------------------
+        self.youtube_thumbnail_label.setParent(self)
+        #=================================
 
-        #-----Download folder line edit label-----
+        #=====Download folder line edit label=====
         self.download_folder_line_edit_label = download_folder_line_edit_label
-       # self.download_folder_line_edit_label.setParent(self)
-        #-----------------------------------------
+        self.download_folder_line_edit_label.setParent(self)
+        #=========================================
         
-        #------Download folder line edit-----
+        #======Download folder line edit=====
         self.download_folder_line_edit = download_folder_line_edit
-        #self.download_folder_line_edit.setParent(self)
+        self.download_folder_line_edit.setParent(self)
         self.download_folder_line_edit_error_text: str | None = None
-        #------------------------------------
+        #====================================
 
-        #------Select download folder push button------
+        #======Select download folder push button======
         self.select_download_folder_push_button = select_download_folder_push_button
-        #self.select_download_folder_push_button.setParent(self)
+        self.select_download_folder_push_button.setParent(self)
         select_download_folder_push_button.clicked.connect(self.on_click_select_download_folder_push_button)
-        #----------------------------------------------
+        #==============================================
 
-        #-----Stream type options combo box label----- 
+        #=====Stream type options combo box label===== 
         self.stream_type_options_combo_box_label = stream_type_options_combo_box_label
-        #self.stream_type_options_combo_box_label.setParent(self)
-        #---------------------------------------
+        self.stream_type_options_combo_box_label.setParent(self)
+        #=======================================
 
-        #-----Stream type options combo box------
+        #=====Stream type options combo box======
         self.stream_type_options_combo_box = stream_type_options_combo_box
-        #self.stream_type_options_combo_box.setParent(self)
+        self.stream_type_options_combo_box.setParent(self)
         self.stream_type_options_combo_box.activated.connect(self.on_activate_stream_type_options_combo_box)
-        #----------------------------------------
+        #========================================
 
-        #-----Stream quality options combo box label-----
+        #=====Stream quality options combo box label=====
         self.stream_quality_options_combo_box_label = stream_quality_options_combo_box_label
-        #self.stream_quality_options_combo_box_label.setParent(self)
-        #------------------------------------------------
+        self.stream_quality_options_combo_box_label.setParent(self)
+        #================================================
 
-        #-----Stream quality options combo box-----
+        #=====Stream quality options combo box=====
         self.stream_quality_options_combo_box = stream_quality_options_combo_box
-        #self.stream_quality_options_combo_box.setParent(self)
+        self.stream_quality_options_combo_box.setParent(self)
         self.stream_quality_options_combo_box.activated.connect(self.on_activate_stream_quality_options_combo_box)
-        #------------------------------------------
+        #==========================================
 
-        #-----Download YouTube stream push button-----
+        #=====Download YouTube stream push button=====
         self.download_youtube_stream_push_button = download_youtube_stream_push_button
-        #self.download_youtube_stream_push_button.setParent(self)
+        self.download_youtube_stream_push_button.setParent(self)
         self.download_youtube_stream_push_button.clicked.connect(self.on_click_download_youtube_stream_push_button)
-        #---------------------------------------------
+        #=============================================
 
-        #-----Stream file extension options combo box label-----
+        #=====Stream file extension options combo box label=====
         self.stream_file_extension_options_combo_box_label = stream_file_extension_options_combo_box_label
-        #self.stream_file_extension_options_combo_box_label.setParent(self)
-        #-------------------------------------------------------
+        self.stream_file_extension_options_combo_box_label.setParent(self)
+        #=======================================================
 
-        #-----Stream file extension options combo box-----
+        #=====Stream file extension options combo box=====
         self.stream_file_extension_options_combo_box = stream_file_extension_options_combo_box
-        #self.stream_file_extension_options_combo_box.setParent(self)
-        #-------------------------------------------------------
+        self.stream_file_extension_options_combo_box.setParent(self)
+        #=======================================================
 
-        #-----Layout-----
+        #=====Layout=====
         layout = QGridLayout()
 
         layout.addWidget(self.youtube_thumbnail_label, 0, 1)
@@ -121,66 +127,219 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
         layout.addWidget(self.download_youtube_stream_push_button, 5, 1)
 
         self.setLayout(layout)
-        #----------------
+        #================
+
+        #=====Connecting internal signals=====
+        self.initialised_youtube_stream_combo_boxes_signal.connect(self.on_initialised_youtube_stream_combo_boxes_signal)
+        #=====================================
 
     def on_click_select_download_folder_push_button(self):
 
-        try:
-            
-            self.download_folder_line_edit_error_text = None
-            self.download_folder_line_edit.reset()
-            self.download_folder_url = QFileDialog.getExistingDirectoryUrl(self, caption = "Select download folder")
-
-            if self.download_folder_url.isValid():
-                url_text: str = self.download_folder_url.toLocalFile()
-                self.download_folder_line_edit.setText(url_text)
-            else:
-                self.download_folder_line_edit_error_text: str = "ERROR: Invalid folder URL"
-                self.download_folder_url = None
-
-        except KeyboardInterrupt:
-            
-            self.download_folder_line_edit_error_text = None
-            self.download_folder_line_edit.reset()
-            
-        finally:
-
-            if self.download_folder_line_edit_error_text:
-
-                self.download_folder_line_edit.clear()
-                self.download_folder_line_edit.setPlaceholderText(self.download_folder_line_edit_error_text)
-                self.download_folder_line_edit.setStyleSheet(self.download_folder_line_edit.error_style_sheet)
-    
-    def connect_handle_valid_youtube_url_signal_methods(self, youtube_url_search_view: QWidget):
-        youtube_url_search_view.valid_youtube_url_signal.connect(self.handle_valid_youtube_url_signal)
-    
-    def handle_valid_youtube_url_signal(self, youtube: YouTube):
-        
-        self.youtube = youtube
-        youtube_thumbnail_url: str = youtube.thumbnail_url
-
-        self.youtube_thumbnail_label.set_thumbnail(youtube_thumbnail_url)
-
-        self.stream_type_options_combo_box.set_combo_box_items_based_on_streams(self.youtube.streams)
-        
-        current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)
-
-        self.stream_quality_options_combo_box.set_combo_box_items_based_on_streams(
-            streams = self.youtube.streams,
-            stream_type = current_stream_type
+        self.on_valid_youtube_stream_worker = YouTubeDownloadViewWorker(
+            youtube = self.youtube,
+            log_calls = self.log_calls
             )
         
-        current_stream_quality: str = self.stream_quality_options_combo_box.currentText()
+        self.on_click_select_download_folder_thread = QThread()
+        self.on_valid_youtube_stream_worker.moveToThread(self.on_click_select_download_folder_thread)
 
-        self.stream_file_extension_options_combo_box.set_combo_box_items_based_on_streams(
-            streams = self.youtube.streams,
-            stream_type = current_stream_type,
-            stream_quality = current_stream_quality
+        #=====Connecting methods to call when the on click select download folder thread starts=====
+        self.on_click_select_download_folder_thread.started.connect(
+            self.on_valid_youtube_stream_worker.validate_download_folder_url
             )
+        #===========================================================================================
+
+        #=====Handling YouTube download worker signals=====
+        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
+            self.on_valid_download_folder_url_signal
+            )
+        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
+            self.on_invalid_download_folder_url_signal
+            )
+        #==================================================
+
+        #=====Stopping thread=====
+        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
+            self.on_click_select_download_folder_thread.quit
+            )
+        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
+            self.on_click_select_download_folder_thread.quit
+            )
+        #=========================
+
+        #=====Thread and worker clean up=====
+        
+        #-----Worker-----
+        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
+            self.on_valid_youtube_stream_worker.deleteLater
+            )
+        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
+            self.on_valid_youtube_stream_worker.deleteLater
+            )
+        #----------------
+
+        #-----Thread-----
+        self.on_click_select_download_folder_thread.finished.connect(
+            self.on_click_select_download_folder_thread.deleteLater
+            )
+        #----------------
+
+        #====================================
+
+        self.on_click_select_download_folder_thread.start()
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
+
+    def on_valid_download_folder_url_signal(self, download_folder_url: str):
+        
+        self.download_folder_line_edit.clear()
+        self.download_folder_line_edit.reset()
+        self.download_folder_line_edit.setText(download_folder_url)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_invalid_download_folder_url_signal(self, error_text: str):
+
+        self.download_folder_line_edit.clear()
+        self.download_folder_line_edit.set_error_text(error_text)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_retrieved_initial_youtube_stream_combo_boxes_values_signal(
+            self,
+            stream_type_options: list[StreamType],
+            stream_quality_options: list[str],
+            stream_file_extension_options: list[str]):
+        
+        for stream_type in stream_type_options:
+
+            self.stream_type_options_combo_box.addItem(
+                stream_type.value,
+                userData = stream_type
+                )
+            
+            self.stream_quality_options_combo_box.addItems(stream_quality_options)
+
+            self.stream_file_extension_options_combo_box.addItems(stream_file_extension_options)
+
+        self.initialised_youtube_stream_combo_boxes_signal.emit()
+
+        if self.log_calls:
+            self.log_call()
     
+    def on_initialised_youtube_stream_combo_boxes_signal(self):
+        
+        self.on_initialised_combo_boxes_worker = YouTubeDownloadViewWorker(
+            youtube = self.youtube,
+            thumbnail_size = self.youtube_thumbnail_label.size(),
+            log_calls = self.log_calls  
+            )
+        
+        self.on_initialised_combo_boxes_thread = QThread()
+        self.on_initialised_combo_boxes_worker.moveToThread(self.on_initialised_combo_boxes_thread)
+
+        #=====Connecting methods to call when the initialised combo boxes signal is received=====
+        self.on_initialised_combo_boxes_thread.started.connect(
+            self.on_initialised_combo_boxes_worker.create_youtube_thumbnail_pixmap
+            )
+        #========================================================================================
+
+        #=====Handling YouTube download worker signals=====
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_created_youtube_thumbnail_pixmap_signal
+            )
+        #==================================================
+
+        #=====Stopping thread=====
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_thread.quit
+            )
+        #=========================
+
+        #=====Thread and worker clean up=====
+
+        #-----Worker-----
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_worker.deleteLater
+            )
+        #----------------
+
+        #-----Thread-----
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_thread.deleteLater
+            )
+        #----------------
+
+        #====================================
+
+        self.on_initialised_combo_boxes_thread.start()
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_created_youtube_thumbnail_pixmap_signal(self, thumbnail_pixmap: QPixmap):
+
+        self.youtube_thumbnail_label.setPixmap(thumbnail_pixmap)
+
+        self.initialised_youtube_stream_thumbnail_signal.emit()
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_valid_youtube_stream_signal(self, youtube: YouTube):
+
+        self.youtube = youtube
+
+        self.on_valid_youtube_stream_worker = YouTubeDownloadViewWorker(
+            youtube = self.youtube,
+            log_calls = self.log_calls
+            )
+        
+        self.on_valid_youtube_stream_thread = QThread()
+        self.on_valid_youtube_stream_worker.moveToThread(self.on_valid_youtube_stream_thread)
+
+        #=====Handling YouTube download view worker signals=====
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_retrieved_initial_youtube_stream_combo_boxes_values_signal
+            )
+        #=======================================================
+
+        #=====Connecting methods to call when the valid YouTube stream signal is received=====
+        self.on_valid_youtube_stream_thread.started.connect(
+            self.on_valid_youtube_stream_worker.retrieve_initial_youtube_stream_combo_boxes_values
+            )
+        #=====================================================================================
+
+        #=====Stopping thread=====
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_thread.quit
+            )
+        #=========================
+
+        #=====Thread and worker clean up=====
+
+        #-----Worker-----
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_worker.deleteLater
+            )
+        #----------------
+
+        #-----Thread-----
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_thread.deleteLater
+            )
+        #----------------
+
+        #=====================================
+
+        self.on_valid_youtube_stream_thread.start()
+
+        if self.log_calls:
+            self.log_call()
+
     def on_activate_stream_type_options_combo_box(self):
         
         current_stream_type: StreamType = self.stream_type_options_combo_box.currentData(Qt.UserRole)

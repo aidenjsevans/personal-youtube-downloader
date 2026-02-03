@@ -14,6 +14,7 @@ from widgets.views.youtube_url_search_view.labels.youtube_url_line_edit_label im
 from widgets.views.youtube_url_search_view.line_edits.youtube_url_line_edit import YouTubeUrlLineEdit
 from widgets.views.youtube_url_search_view.buttons.search_youtube_media_push_button import SearchYoutubeMediaPushButton
 from widgets.views.youtube_url_search_view.check_boxes.playlist_url_check_box import PlaylistUrlCheckBox
+from widgets.views.youtube_url_search_view.youtube_url_search_view_worker import YouTubeUrlSearchViewWorker
 
 from widgets.views.youtube_download_view.youtube_download_view import YoutubeDownloadView
 from widgets.views.youtube_download_view.labels.youtube_thumbnail_label import YoutubeThumbnailLabel
@@ -77,6 +78,7 @@ if __name__ == "__main__":
         stream_file_extension_options_combo_box_label = StreamFileExtensionOptionsComboBoxLabel(),
         stream_file_extension_options_combo_box = StreamFileExtensionOptionsComboBox(),
         thumbnail_metadata_format = ImageFormat.JPEG,
+        log_calls = True
         )
     
     youtube_playlist_download_view = YoutubePlaylistDownloadView(

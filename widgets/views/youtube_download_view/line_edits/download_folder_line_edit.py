@@ -17,13 +17,23 @@ class DownloadFolderLineEdit(QLineEdit):
             QLineEdit.TrailingPosition
             )
         
-        clear_action.triggered.connect(self.reset)
+        clear_action.triggered.connect(self.clear_action)
 
         self.setReadOnly(True)
-        self.reset()
+        self.clear_action()
     
     def reset(self):
-        self.clear()
+
         self.setPlaceholderText(self.placeholder_text)
         self.setStyleSheet(self.default_style_sheet)
+    
+    def clear_action(self):
+
+        self.clear()
+        self.reset()
+
+    def set_error_text(self, error_text: str):
+
+        self.setPlaceholderText(error_text)
+        self.setStyleSheet(self.error_style_sheet)
     

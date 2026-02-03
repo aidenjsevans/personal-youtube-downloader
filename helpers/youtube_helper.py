@@ -1,10 +1,15 @@
 from pytubefix import StreamQuery
 
 from helpers.format_helper import FormatHelper
+from helpers.request_helper import RequestHelper
 
 from enums.stream_type import StreamType
 
 from mutagen.mp4 import MP4, MP4Cover
+
+from PySide6.QtCore import QSize
+
+from PySide6.QtGui import QPixmap, Qt
 
 class YouTubeHelper:
 
@@ -212,7 +217,25 @@ class YouTubeHelper:
             audio_file["covr"] = thumbnail
         
         audio_file.save()
+
+    def get_thumbnail(size: QSize, url: str) -> QPixmap:
+
+        response = RequestHelper.get(url)
+
+        pixmap = QPixmap()
+        pixmap.loadFromData(response.content)
+
+        scaled_pixmap: QPixmap = pixmap.scaled(
+            size,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+            )
         
+        return scaled_pixmap
+
+           
+
+
 
 
 

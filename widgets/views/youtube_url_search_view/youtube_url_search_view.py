@@ -3,24 +3,19 @@ from PySide6.QtWidgets import (
     QLabel, QPushButton, QCheckBox)
 
 from PySide6.QtCore import (
-    Signal, Qt)
+    Signal, QThread)
 
 from mixins.method_log_mixin import MethodLogMixin
 
 from pytubefix import YouTube, Playlist
-from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
-from widgets.custom.circle_loading_widget import CircleLoadingWidget
-
-import time
+from widgets.views.youtube_url_search_view.youtube_url_search_view_worker import YouTubeUrlSearchViewWorker
 
 class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
-    valid_youtube_url_signal = Signal(YouTube)
-    valid_youtube_playlist_url_signal = Signal(Playlist)
-    started_searching_signal = Signal()
-    failed_search_signal = Signal()
-
+    valid_youtube_playlist_signal = Signal(Playlist)
+    valid_youtube_stream_signal = Signal(YouTube)
+    
     def __init__(
             self,
             youtube_icon_label: QLabel,
@@ -35,36 +30,35 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
         self.log_calls = log_calls
 
-        #-----YouTube icon label-----
+        #=====YouTube icon label=====
         self.youtube_icon_label = youtube_icon_label
         self.youtube_icon_label.setParent(self)
-        #----------------------------
+        #============================
         
-        #-----YouTube URL line edit label-----
+        #=====YouTube URL line edit label=====
         self.youtube_url_line_edit_label = youtube_url_line_edit_label
         self.youtube_url_line_edit_label.setParent(self)
-        #-------------------------------------
+        #=====================================
 
-        #-----YouTube URL line edit-----
+        #=====YouTube URL line edit=====
         self.youtube_url_line_edit = youtube_url_line_edit
         self.youtube_url_line_edit.setParent(self)
         self.youtube_url_line_edit.textEdited.connect(self.on_edit_youtube_url_line_edit)
-        self.youtube_url_line_edit_error_text: str | None = None
-        self.youtube_url_line_edit_started_typing: bool = False
-        #-------------------------------
+        self.youtube_url_line_edit_first_edited: bool = False
+        #===============================
 
-        #-----Search YouTube media push button-----
+        #=====Search YouTube media push button=====
         self.search_youtube_media_push_button = search_youtube_media_push_button
         self.search_youtube_media_push_button.setParent(self)
         self.search_youtube_media_push_button.clicked.connect(self.on_click_search_youtube_media_push_button)
-        #------------------------------------------
+        #==========================================
 
-        #-----YouTube URL check box-----
+        #=====YouTube URL check box=====
         self.playlist_url_check_box = playlist_url_check_box
         self.playlist_url_check_box.setParent(self)
-        #-------------------------------
+        #===============================
 
-        #-----Layout------
+        #=====Layout======
         self.view_layout = QGridLayout()
 
         self.view_layout.addWidget(self.youtube_icon_label, 0, 1, 1, 1)
@@ -74,94 +68,136 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         self.view_layout.addWidget(self.search_youtube_media_push_button, 3, 1, 1, 2)
 
         self.setLayout(self.view_layout)
-        #-----------------
+        #=================
 
     def on_edit_youtube_url_line_edit(self):
 
-        if self.youtube_url_line_edit_started_typing:
-            self.youtube_url_line_edit.disconnect(self.on_edit_youtube_url_line_edit)
-        
-        self.youtube_url_line_edit.reset()
-        self.youtube_url_line_edit_error_text = None
+        if not self.youtube_url_line_edit_first_edited:
 
+            self.youtube_url_line_edit_first_edited = True
+            self.youtube_url_line_edit.reset()
+        
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
     
     def on_click_search_youtube_media_push_button(self):
 
-        try:
+        youtube_url = self.youtube_url_line_edit.text()
+        is_playlist_check_box_checked = self.playlist_url_check_box.isChecked()
 
-            #self.start_searching()
+        #   Need to create a new worker each time so that it can be safely deleted
+        self.youtube_url_search_view_worker = YouTubeUrlSearchViewWorker(
+            youtube_url = youtube_url,
+            is_playlist_check_box_checked = is_playlist_check_box_checked,
+            log_calls = self.log_calls
+            )
 
-            self.youtube_url = self.youtube_url_line_edit.text()
+        self.on_click_search_youtube_media_thread = QThread()
+        self.youtube_url_search_view_worker.moveToThread(self.on_click_search_youtube_media_thread)
 
-            if not self.youtube_url:
-                self.youtube_url_line_edit_error_text = "ERROR: YouTube URL required"
-            
-            if self.youtube_url_line_edit_error_text:
-                return
-            
-            #   TODO user option to skip exception
-            if self.playlist_url_check_box.isChecked():
-                
-                playlist = Playlist(url = self.youtube_url)
+        #=====Connecting methods to call when the on click search YouTube media thread starts=====
+        self.on_click_search_youtube_media_thread.started.connect(
+            self.on_started_search_youtube_media_thread
+            )
+        self.on_click_search_youtube_media_thread.started.connect(
+            self.youtube_url_search_view_worker.search_youtube_media
+            )
+        #=================================================================================
 
-                for youtube in playlist.videos:
-                    
-                    youtube.check_availability()
-                
-                self.emit_valid_youtube_playlist_url_signal(playlist)
-                
-            else:
+        #=====Handling search YouTube playlist worker signals=====
+        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
+            self.on_search_youtube_playlist_finished_signal
+            )
+        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
+            self.on_search_youtube_stream_finished_signal
+            )
+        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
+            self.on_search_youtube_media_error_signal
+            )
+        #=========================================================
 
-                youtube = YouTube(url = self.youtube_url)
-                
-                youtube.check_availability()
+        #=====Stopping thread=====
+        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
+            self.on_click_search_youtube_media_thread.quit
+            )
+        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
+            self.on_click_search_youtube_media_thread.quit
+            )
+        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
+            self.on_click_search_youtube_media_thread.quit
+            )
+        #=========================
 
-                self.emit_valid_youtube_url_signal(youtube)
+        #=====Thread and worker clean up=====
 
-        except RegexMatchError:
-
-            self.youtube_url_line_edit_error_text = "ERROR: Invalid YouTube URL"
-            #self.fail_searching()
-
-        except VideoUnavailable:
-            
-            self.youtube_url_line_edit_error_text = "ERROR: Video unavailable"
-            #self.fail_searching()
-
-        finally:
-            
-            if self.youtube_url_line_edit_error_text:
-
-                #self.fail_searching()
-                self.youtube_url_line_edit.clear()
-                self.youtube_url_line_edit.setPlaceholderText(self.youtube_url_line_edit_error_text)
-                self.youtube_url_line_edit.setStyleSheet(self.youtube_url_line_edit.error_style_sheet)
-                self.youtube_url_line_edit.textEdited.connect(self.on_edit_youtube_url_line_edit)
-                
-                if self.log_calls:
-                    self.log_call(message = self.youtube_url_line_edit_error_text)
-            
-    def emit_valid_youtube_url_signal(self, youtube: YouTube):
+        #-----Worker-----
+        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
+            self.youtube_url_search_view_worker.deleteLater
+            )
+        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
+            self.youtube_url_search_view_worker.deleteLater
+        )
+        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
+            self.youtube_url_search_view_worker.deleteLater
+            )
+        #----------------
         
-        self.valid_youtube_url_signal.emit(youtube)
+        #-----Thread-----
+        self.on_click_search_youtube_media_thread.finished.connect(
+            self.on_click_search_youtube_media_thread.deleteLater
+            )
+        #----------------
+
+        #====================================
+
+        self.on_click_search_youtube_media_thread.start()
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
     
-    def emit_valid_youtube_playlist_url_signal(self, playlist: Playlist):
-
-        self.valid_youtube_playlist_url_signal.emit(playlist)
+    def on_started_search_youtube_media_thread(self):
+        
+        self.search_youtube_media_push_button.setEnabled(False)
+        
+        self.youtube_url_line_edit.reset()
+        self.youtube_url_line_edit.setReadOnly(True)
 
         if self.log_calls:
-            self.log_call(message = "Success")
+            self.log_call()
+        
+    def on_search_youtube_playlist_finished_signal(self, playlist: Playlist):
+        
+        self.search_youtube_media_push_button.setEnabled(True)
 
-    def start_searching(self):
-        self.started_searching_signal.emit()
+        self.youtube_url_line_edit.setReadOnly(False)
 
-    def fail_searching(self):
-        self.failed_search_signal.emit()
+        self.valid_youtube_playlist_signal.emit(playlist)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_search_youtube_stream_finished_signal(self, youtube: YouTube):
+        
+        self.search_youtube_media_push_button.setEnabled(True)
+
+        self.youtube_url_line_edit.setReadOnly(False)
+
+        self.valid_youtube_stream_signal.emit(youtube)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_search_youtube_media_error_signal(self, error_text: str):
+        
+        self.search_youtube_media_push_button.setEnabled(True)
+
+        self.youtube_url_line_edit.setReadOnly(False)
+        self.youtube_url_line_edit.clear()
+        self.youtube_url_line_edit_first_edited = False
+        self.youtube_url_line_edit.set_error_text(error_text = error_text)
+
+        if self.log_calls:
+            self.log_call()
 
 
 

@@ -13,5 +13,11 @@ class YouTubeUrlLineEdit(QLineEdit):
         self.reset()
     
     def reset(self):
+        
         self.setPlaceholderText(self.placeholder_text)
         self.setStyleSheet(self.default_style_sheet)
+
+    def set_error_text(self, error_text: str):
+        
+        self.setPlaceholderText(error_text)
+        self.setStyleSheet(self.error_style_sheet)
