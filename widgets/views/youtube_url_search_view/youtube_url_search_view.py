@@ -13,6 +13,8 @@ from widgets.views.youtube_url_search_view.youtube_url_search_view_worker import
 
 from widgets.custom.circle_loading_widget import CircleLoadingWidget
 
+import time
+
 class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
     valid_youtube_playlist_signal = Signal(Playlist)
@@ -166,7 +168,8 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
     
     def on_started_search_youtube_media_thread(self):
         
-        self.search_youtube_media_push_button.setEnabled(False)
+        self.search_youtube_media_push_button.set_searching()
+        self.circle_loading_widget.show()
         
         self.youtube_url_line_edit.reset()
         self.youtube_url_line_edit.setReadOnly(True)
@@ -176,7 +179,8 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         
     def on_receiving_search_youtube_playlist_finished_signal(self, playlist: Playlist):
         
-        self.search_youtube_media_push_button.setEnabled(True)
+        self.circle_loading_widget.hide()
+        self.search_youtube_media_push_button.reset()
 
         self.youtube_url_line_edit.setReadOnly(False)
 
@@ -187,7 +191,8 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
     def on_receiving_search_youtube_stream_finished_signal(self, youtube: YouTube):
         
-        self.search_youtube_media_push_button.setEnabled(True)
+        self.circle_loading_widget.hide()
+        self.search_youtube_media_push_button.reset()
 
         self.youtube_url_line_edit.setReadOnly(False)
 
@@ -198,7 +203,8 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
     def on_receiving_search_youtube_media_error_signal(self, error_text: str):
         
-        self.search_youtube_media_push_button.setEnabled(True)
+        self.circle_loading_widget.hide()
+        self.search_youtube_media_push_button.reset()
 
         self.youtube_url_line_edit.setReadOnly(False)
         self.youtube_url_line_edit.clear()

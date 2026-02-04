@@ -16,7 +16,11 @@ class SearchYoutubeMediaPushButton(QPushButton):
         self.reset()
     
     def reset(self):
+        
         self.setText(self.default_text)
+        self.setEnabled(True)
 
     def set_searching(self):
+        
         self.setText("")
+        self.setEnabled(False)

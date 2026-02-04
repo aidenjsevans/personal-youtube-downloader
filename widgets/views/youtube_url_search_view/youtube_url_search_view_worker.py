@@ -5,6 +5,8 @@ from pytubefix.exceptions import RegexMatchError, VideoUnavailable
 
 from mixins.method_log_mixin import MethodLogMixin
 
+import time
+
 class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
 
     search_for_youtube_playlist_finished_signal = Signal(Playlist)
@@ -28,6 +30,8 @@ class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
     def search_for_youtube_media(self):
 
         try:
+
+            time.sleep(5)
 
             self.youtube_url_line_edit_error_text = None
 
