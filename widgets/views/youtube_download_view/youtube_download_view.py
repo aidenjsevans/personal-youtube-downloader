@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QLabel, QGridLayout,
-    QLineEdit, QPushButton, QComboBox)
+    QLineEdit, QPushButton, QComboBox,
+    QFileDialog)
 
 from PySide6.QtCore import Qt, Signal, QThread
 
@@ -47,10 +48,14 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
         
         super().__init__(parent = parent)
 
-        self.thumbnail_metadata_format = thumbnail_metadata_format
         self.log_calls = log_calls
+        
         self.youtube: YouTube | None = None
-
+        self.thumbnail_metadata_format = thumbnail_metadata_format
+        
+        self.download_folder_line_edit_error_text: str | None = None
+        self.download_folder_url: str | None = None
+        
         #=====YouTube thumbnail label=====
         self.youtube_thumbnail_label = youtube_thumbnail_label
         self.youtube_thumbnail_label.setParent(self)
@@ -130,212 +135,42 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
         #================
 
         #=====Connecting internal signals=====
-        self.initialised_youtube_stream_combo_boxes_signal.connect(self.on_initialised_youtube_stream_combo_boxes_signal)
+        self.initialised_youtube_stream_combo_boxes_signal.connect(self.on_receiving_initialised_youtube_stream_combo_boxes_signal)
         #=====================================
 
     def on_click_select_download_folder_push_button(self):
 
-        self.on_valid_youtube_stream_worker = YouTubeDownloadViewWorker(
-            youtube = self.youtube,
-            log_calls = self.log_calls
-            )
-        
-        self.on_click_select_download_folder_thread = QThread()
-        self.on_valid_youtube_stream_worker.moveToThread(self.on_click_select_download_folder_thread)
-
-        #=====Connecting methods to call when the on click select download folder thread starts=====
-        self.on_click_select_download_folder_thread.started.connect(
-            self.on_valid_youtube_stream_worker.validate_download_folder_url
-            )
-        #===========================================================================================
-
-        #=====Handling YouTube download worker signals=====
-        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
-            self.on_valid_download_folder_url_signal
-            )
-        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
-            self.on_invalid_download_folder_url_signal
-            )
-        #==================================================
-
-        #=====Stopping thread=====
-        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
-            self.on_click_select_download_folder_thread.quit
-            )
-        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
-            self.on_click_select_download_folder_thread.quit
-            )
-        #=========================
-
-        #=====Thread and worker clean up=====
-        
-        #-----Worker-----
-        self.on_valid_youtube_stream_worker.valid_download_folder_url_signal.connect(
-            self.on_valid_youtube_stream_worker.deleteLater
-            )
-        self.on_valid_youtube_stream_worker.invalid_download_folder_url_signal.connect(
-            self.on_valid_youtube_stream_worker.deleteLater
-            )
-        #----------------
-
-        #-----Thread-----
-        self.on_click_select_download_folder_thread.finished.connect(
-            self.on_click_select_download_folder_thread.deleteLater
-            )
-        #----------------
-
-        #====================================
-
-        self.on_click_select_download_folder_thread.start()
-
-        if self.log_calls:
-            self.log_call()
-
-    def on_valid_download_folder_url_signal(self, download_folder_url: str):
-        
-        self.download_folder_line_edit.clear()
-        self.download_folder_line_edit.reset()
-        self.download_folder_line_edit.setText(download_folder_url)
-
-        if self.log_calls:
-            self.log_call()
-
-    def on_invalid_download_folder_url_signal(self, error_text: str):
-
-        self.download_folder_line_edit.clear()
-        self.download_folder_line_edit.set_error_text(error_text)
-
-        if self.log_calls:
-            self.log_call()
-
-    def on_retrieved_initial_youtube_stream_combo_boxes_values_signal(
-            self,
-            stream_type_options: list[StreamType],
-            stream_quality_options: list[str],
-            stream_file_extension_options: list[str]):
-        
-        for stream_type in stream_type_options:
-
-            self.stream_type_options_combo_box.addItem(
-                stream_type.value,
-                userData = stream_type
-                )
+        try:
             
-            self.stream_quality_options_combo_box.addItems(stream_quality_options)
+            self.download_folder_line_edit.reset()
+            self.download_folder_line_edit_error_text = None
+            self.download_folder_url = QFileDialog.getExistingDirectoryUrl(self, caption = "Select download folder")
 
-            self.stream_file_extension_options_combo_box.addItems(stream_file_extension_options)
+            if self.download_folder_url.isValid():
+                
+                url_text: str = self.download_folder_url.toLocalFile()
+                self.download_folder_line_edit.setText(url_text)
+            
+            else:
+                
+                self.download_folder_url = None
+                self.download_folder_line_edit_error_text = "ERROR: Invalid folder URL"
+                
+        except KeyboardInterrupt:
 
-        self.initialised_youtube_stream_combo_boxes_signal.emit()
+            self.download_folder_line_edit_error_text = "ERROR: Keyboard interrupt"
 
-        if self.log_calls:
-            self.log_call()
-    
-    def on_initialised_youtube_stream_combo_boxes_signal(self):
-        
-        self.on_initialised_combo_boxes_worker = YouTubeDownloadViewWorker(
-            youtube = self.youtube,
-            thumbnail_size = self.youtube_thumbnail_label.size(),
-            log_calls = self.log_calls  
-            )
-        
-        self.on_initialised_combo_boxes_thread = QThread()
-        self.on_initialised_combo_boxes_worker.moveToThread(self.on_initialised_combo_boxes_thread)
+        except Exception as e:
 
-        #=====Connecting methods to call when the initialised combo boxes signal is received=====
-        self.on_initialised_combo_boxes_thread.started.connect(
-            self.on_initialised_combo_boxes_worker.create_youtube_thumbnail_pixmap
-            )
-        #========================================================================================
+            self.download_folder_line_edit_error_text = "ERROR: An error occured"
+            raise e
+             
+        finally:
 
-        #=====Handling YouTube download worker signals=====
-        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
-            self.on_created_youtube_thumbnail_pixmap_signal
-            )
-        #==================================================
+            if self.download_folder_line_edit_error_text:
 
-        #=====Stopping thread=====
-        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
-            self.on_initialised_combo_boxes_thread.quit
-            )
-        #=========================
-
-        #=====Thread and worker clean up=====
-
-        #-----Worker-----
-        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
-            self.on_initialised_combo_boxes_worker.deleteLater
-            )
-        #----------------
-
-        #-----Thread-----
-        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
-            self.on_initialised_combo_boxes_thread.deleteLater
-            )
-        #----------------
-
-        #====================================
-
-        self.on_initialised_combo_boxes_thread.start()
-
-        if self.log_calls:
-            self.log_call()
-
-    def on_created_youtube_thumbnail_pixmap_signal(self, thumbnail_pixmap: QPixmap):
-
-        self.youtube_thumbnail_label.setPixmap(thumbnail_pixmap)
-
-        self.initialised_youtube_stream_thumbnail_signal.emit()
-
-        if self.log_calls:
-            self.log_call()
-
-    def on_valid_youtube_stream_signal(self, youtube: YouTube):
-
-        self.youtube = youtube
-
-        self.on_valid_youtube_stream_worker = YouTubeDownloadViewWorker(
-            youtube = self.youtube,
-            log_calls = self.log_calls
-            )
-        
-        self.on_valid_youtube_stream_thread = QThread()
-        self.on_valid_youtube_stream_worker.moveToThread(self.on_valid_youtube_stream_thread)
-
-        #=====Handling YouTube download view worker signals=====
-        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
-            self.on_retrieved_initial_youtube_stream_combo_boxes_values_signal
-            )
-        #=======================================================
-
-        #=====Connecting methods to call when the valid YouTube stream signal is received=====
-        self.on_valid_youtube_stream_thread.started.connect(
-            self.on_valid_youtube_stream_worker.retrieve_initial_youtube_stream_combo_boxes_values
-            )
-        #=====================================================================================
-
-        #=====Stopping thread=====
-        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
-            self.on_valid_youtube_stream_thread.quit
-            )
-        #=========================
-
-        #=====Thread and worker clean up=====
-
-        #-----Worker-----
-        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
-            self.on_valid_youtube_stream_worker.deleteLater
-            )
-        #----------------
-
-        #-----Thread-----
-        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
-            self.on_valid_youtube_stream_thread.deleteLater
-            )
-        #----------------
-
-        #=====================================
-
-        self.on_valid_youtube_stream_thread.start()
+                self.download_folder_line_edit.clear()
+                self.download_folder_line_edit.set_error_text(self.download_folder_line_edit_error_text)
 
         if self.log_calls:
             self.log_call()
@@ -448,6 +283,157 @@ class YoutubeDownloadView(QWidget, MethodLogMixin):
                         )
             
             self.finished_youtube_download_signal.emit()
+
+
+    def on_receiving_valid_download_folder_url_signal(self, download_folder_url: str):
+        
+        self.download_folder_line_edit.clear()
+        self.download_folder_line_edit.reset()
+        self.download_folder_line_edit.setText(download_folder_url)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_receiving_invalid_download_folder_url_signal(self, error_text: str):
+
+        self.download_folder_line_edit.clear()
+        self.download_folder_line_edit.set_error_text(error_text)
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_receiving_retrieved_initial_youtube_stream_combo_boxes_values_signal(
+            self,
+            stream_type_options: list[StreamType],
+            stream_quality_options: list[str],
+            stream_file_extension_options: list[str]):
+        
+        for stream_type in stream_type_options:
+
+            self.stream_type_options_combo_box.addItem(
+                stream_type.value,
+                userData = stream_type
+                )
+            
+            self.stream_quality_options_combo_box.addItems(stream_quality_options)
+
+            self.stream_file_extension_options_combo_box.addItems(stream_file_extension_options)
+
+        self.initialised_youtube_stream_combo_boxes_signal.emit()
+
+        if self.log_calls:
+            self.log_call()
+    
+    def on_receiving_initialised_youtube_stream_combo_boxes_signal(self):
+        
+        self.on_initialised_combo_boxes_worker = YouTubeDownloadViewWorker(
+            youtube = self.youtube,
+            thumbnail_size = self.youtube_thumbnail_label.size(),
+            log_calls = self.log_calls  
+            )
+        
+        self.on_initialised_combo_boxes_thread = QThread()
+        self.on_initialised_combo_boxes_worker.moveToThread(self.on_initialised_combo_boxes_thread)
+
+        #=====Connecting methods to call when the initialised combo boxes signal is received=====
+        self.on_initialised_combo_boxes_thread.started.connect(
+            self.on_initialised_combo_boxes_worker.create_youtube_thumbnail_pixmap
+            )
+        #========================================================================================
+
+        #=====Handling YouTube download worker signals=====
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_receiving_created_youtube_thumbnail_pixmap_signal
+            )
+        #==================================================
+
+        #=====Stopping thread=====
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_thread.quit
+            )
+        #=========================
+
+        #=====Thread and worker clean up=====
+
+        #-----Worker-----
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_worker.deleteLater
+            )
+        #----------------
+
+        #-----Thread-----
+        self.on_initialised_combo_boxes_worker.created_youtube_thumbnail_pixmap_signal.connect(
+            self.on_initialised_combo_boxes_thread.deleteLater
+            )
+        #----------------
+
+        #====================================
+
+        self.on_initialised_combo_boxes_thread.start()
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_receiving_created_youtube_thumbnail_pixmap_signal(self, thumbnail_pixmap: QPixmap):
+
+        self.youtube_thumbnail_label.setPixmap(thumbnail_pixmap)
+
+        self.initialised_youtube_stream_thumbnail_signal.emit()
+
+        if self.log_calls:
+            self.log_call()
+
+    def on_receiving_valid_youtube_stream_signal(self, youtube: YouTube):
+
+        self.youtube = youtube
+
+        self.on_valid_youtube_stream_worker = YouTubeDownloadViewWorker(
+            youtube = self.youtube,
+            log_calls = self.log_calls
+            )
+        
+        self.on_valid_youtube_stream_thread = QThread()
+        self.on_valid_youtube_stream_worker.moveToThread(self.on_valid_youtube_stream_thread)
+
+        #=====Handling YouTube download view worker signals=====
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_receiving_retrieved_initial_youtube_stream_combo_boxes_values_signal
+            )
+        #=======================================================
+
+        #=====Connecting methods to call when the valid YouTube stream signal is received=====
+        self.on_valid_youtube_stream_thread.started.connect(
+            self.on_valid_youtube_stream_worker.retrieve_initial_youtube_stream_combo_boxes_values
+            )
+        #=====================================================================================
+
+        #=====Stopping thread=====
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_thread.quit
+            )
+        #=========================
+
+        #=====Thread and worker clean up=====
+
+        #-----Worker-----
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_worker.deleteLater
+            )
+        #----------------
+
+        #-----Thread-----
+        self.on_valid_youtube_stream_worker.retrieved_initial_youtube_stream_combo_boxes_values_signal.connect(
+            self.on_valid_youtube_stream_thread.deleteLater
+            )
+        #----------------
+
+        #=====================================
+
+        self.on_valid_youtube_stream_thread.start()
+
+        if self.log_calls:
+            self.log_call()
+
 
 
         

@@ -47,7 +47,7 @@ class MainWindow(QMainWindow, MethodLogMixin):
         self.youtube_download_view = youtube_download_view
         self.youtube_download_view.setParent(self)
         self.youtube_download_view.initialised_youtube_stream_thumbnail_signal.connect(self.on_initialised_youtube_stream_thumbnail_signal)
-        self.youtube_url_search_view.valid_youtube_stream_signal.connect(self.youtube_download_view.on_valid_youtube_stream_signal)
+        self.youtube_url_search_view.valid_youtube_stream_signal.connect(self.youtube_download_view.on_receiving_valid_youtube_stream_signal)
         #===============================
 
         #=====YouTube playlist download view=====

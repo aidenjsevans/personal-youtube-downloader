@@ -7,9 +7,9 @@ from mixins.method_log_mixin import MethodLogMixin
 
 class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
 
-    search_youtube_playlist_finished_signal = Signal(Playlist)
-    search_youtube_stream_finished_signal = Signal(YouTube)
-    search_youtube_media_error_signal = Signal(str)
+    search_for_youtube_playlist_finished_signal = Signal(Playlist)
+    search_for_youtube_stream_finished_signal = Signal(YouTube)
+    search_for_youtube_media_error_signal = Signal(str)
 
     def __init__(
             self,
@@ -25,7 +25,7 @@ class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
 
         self.log_calls = log_calls
 
-    def search_youtube_media(self):
+    def search_for_youtube_media(self):
 
         try:
 
@@ -44,14 +44,14 @@ class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
                 for youtube in playlist.videos:
                     youtube.check_availability()
                 
-                self.search_youtube_playlist_finished_signal.emit(playlist)
+                self.search_for_youtube_playlist_finished_signal.emit(playlist)
                 
             else:
 
                 youtube = YouTube(url = self.youtube_url)
                 youtube.check_availability()
 
-                self.search_youtube_stream_finished_signal.emit(youtube)
+                self.search_for_youtube_stream_finished_signal.emit(youtube)
         
         except RegexMatchError:
             self.youtube_url_line_edit_error_text = "ERROR: Invalid YouTube URL"
@@ -64,7 +64,7 @@ class YouTubeUrlSearchViewWorker(QObject, MethodLogMixin):
             if self.youtube_url_line_edit_error_text:
 
                 #self.fail_searching()
-                self.search_youtube_media_error_signal.emit(self.youtube_url_line_edit_error_text)
+                self.search_for_youtube_media_error_signal.emit(self.youtube_url_line_edit_error_text)
                 
                 if self.log_calls:
                     self.log_call(message = f'"{self.youtube_url_line_edit_error_text}"')

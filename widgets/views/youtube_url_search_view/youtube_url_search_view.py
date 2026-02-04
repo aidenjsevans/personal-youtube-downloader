@@ -11,6 +11,8 @@ from pytubefix import YouTube, Playlist
 
 from widgets.views.youtube_url_search_view.youtube_url_search_view_worker import YouTubeUrlSearchViewWorker
 
+from widgets.custom.circle_loading_widget import CircleLoadingWidget
+
 class YouTubeUrlSearchView(QWidget, MethodLogMixin):
 
     valid_youtube_playlist_signal = Signal(Playlist)
@@ -23,6 +25,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
             youtube_url_line_edit: QLineEdit,
             search_youtube_media_push_button: QPushButton,
             playlist_url_check_box: QCheckBox,
+            circle_loading_widget: CircleLoadingWidget,
             log_calls: bool = False,
             parent = None):
         
@@ -58,6 +61,11 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         self.playlist_url_check_box.setParent(self)
         #===============================
 
+        #=====Circle loading widget=====
+        self.circle_loading_widget = circle_loading_widget
+        self.circle_loading_widget.hide()
+        #===============================
+
         #=====Layout======
         self.view_layout = QGridLayout()
 
@@ -66,6 +74,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         self.view_layout.addWidget(self.youtube_url_line_edit, 2, 1, 1, 1)
         self.view_layout.addWidget(self.playlist_url_check_box, 2, 2, 1, 1)
         self.view_layout.addWidget(self.search_youtube_media_push_button, 3, 1, 1, 2)
+        self.view_layout.addWidget(self.circle_loading_widget, 3, 1, 1, 2)
 
         self.setLayout(self.view_layout)
         #=================
@@ -100,30 +109,30 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
             self.on_started_search_youtube_media_thread
             )
         self.on_click_search_youtube_media_thread.started.connect(
-            self.youtube_url_search_view_worker.search_youtube_media
+            self.youtube_url_search_view_worker.search_for_youtube_media
             )
         #=================================================================================
 
         #=====Handling search YouTube playlist worker signals=====
-        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
-            self.on_search_youtube_playlist_finished_signal
+        self.youtube_url_search_view_worker.search_for_youtube_playlist_finished_signal.connect(
+            self.on_receiving_search_youtube_playlist_finished_signal
             )
-        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
-            self.on_search_youtube_stream_finished_signal
+        self.youtube_url_search_view_worker.search_for_youtube_stream_finished_signal.connect(
+            self.on_receiving_search_youtube_stream_finished_signal
             )
-        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
-            self.on_search_youtube_media_error_signal
+        self.youtube_url_search_view_worker.search_for_youtube_media_error_signal.connect(
+            self.on_receiving_search_youtube_media_error_signal
             )
         #=========================================================
 
         #=====Stopping thread=====
-        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_playlist_finished_signal.connect(
             self.on_click_search_youtube_media_thread.quit
             )
-        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_stream_finished_signal.connect(
             self.on_click_search_youtube_media_thread.quit
             )
-        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_media_error_signal.connect(
             self.on_click_search_youtube_media_thread.quit
             )
         #=========================
@@ -131,13 +140,13 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         #=====Thread and worker clean up=====
 
         #-----Worker-----
-        self.youtube_url_search_view_worker.search_youtube_playlist_finished_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_playlist_finished_signal.connect(
             self.youtube_url_search_view_worker.deleteLater
             )
-        self.youtube_url_search_view_worker.search_youtube_stream_finished_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_stream_finished_signal.connect(
             self.youtube_url_search_view_worker.deleteLater
         )
-        self.youtube_url_search_view_worker.search_youtube_media_error_signal.connect(
+        self.youtube_url_search_view_worker.search_for_youtube_media_error_signal.connect(
             self.youtube_url_search_view_worker.deleteLater
             )
         #----------------
@@ -165,7 +174,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         if self.log_calls:
             self.log_call()
         
-    def on_search_youtube_playlist_finished_signal(self, playlist: Playlist):
+    def on_receiving_search_youtube_playlist_finished_signal(self, playlist: Playlist):
         
         self.search_youtube_media_push_button.setEnabled(True)
 
@@ -176,7 +185,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         if self.log_calls:
             self.log_call()
 
-    def on_search_youtube_stream_finished_signal(self, youtube: YouTube):
+    def on_receiving_search_youtube_stream_finished_signal(self, youtube: YouTube):
         
         self.search_youtube_media_push_button.setEnabled(True)
 
@@ -187,7 +196,7 @@ class YouTubeUrlSearchView(QWidget, MethodLogMixin):
         if self.log_calls:
             self.log_call()
 
-    def on_search_youtube_media_error_signal(self, error_text: str):
+    def on_receiving_search_youtube_media_error_signal(self, error_text: str):
         
         self.search_youtube_media_push_button.setEnabled(True)
 

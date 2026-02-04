@@ -38,11 +38,15 @@ from widgets.custom.circle_loading_widget import CircleLoadingWidget
 from widgets.tool_bars.main_tool_bar.main_tool_bar import MainToolBar
 from widgets.tool_bars.main_tool_bar.actions.return_to_previous_view_action import ReturnToPreviousViewAction
 
+from widgets.custom.circle_loading_widget import CircleLoadingWidget
+
 if __name__ == "__main__":
 
     app = QApplication()
 
     app.setStyleSheet(dark_theme)
+
+    circle_loading_widget = CircleLoadingWidget(radius = 8)
 
     main_tool_bar = MainToolBar(
         return_to_previous_view_action = ReturnToPreviousViewAction()
@@ -58,6 +62,7 @@ if __name__ == "__main__":
         youtube_url_line_edit = YouTubeUrlLineEdit(),
         search_youtube_media_push_button = SearchYoutubeMediaPushButton(),
         playlist_url_check_box = PlaylistUrlCheckBox(),
+        circle_loading_widget = circle_loading_widget,
         log_calls = True
         )
     
